@@ -1,0 +1,181 @@
+# Redis com Docker Compose
+
+Este projeto configura e executa um servidor Redis utilizando Docker e Docker Compose. Ele inclui configuração de múltiplos usuários com autenticação via ACL (Access Control Lists), e a persistência de dados com snapshots e logs.
+
+## Funcionalidade
+
+O projeto permite rodar uma instância do Redis em contêineres Docker separados para diferentes ambientes (Desenvolvimento, Homologação, Produção), com autenticação configurada para dois usuários:
+
+- `conecta`: Usuário para operações gerais.
+- `root`: Usuário com permissões administrativas.
+
+Ambos os usuários têm senhas armazenadas em variáveis de ambiente para garantir segurança e evitar que informações sensíveis sejam enviadas ao repositório.
+
+## Estrutura do Projeto
+
+O projeto é composto pelos seguintes arquivos:
+
+- **docker-compose.yml**: Define os serviços e configurações de rede, volumes e variáveis de ambiente para os contêineres Docker.
+- **Dockerfile**: Configura a criação da imagem Docker do Redis.
+- **redis.conf**: Configuração personalizada do Redis, incluindo ACLs para os usuários.
+- **.env**: Armazena variáveis de ambiente, como senhas, para garantir que informações sensíveis não sejam comprometidas.
+
+## Pré-requisitos
+
+- [Docker](https://www.docker.com/) instalado na sua máquina.
+- [Docker Compose](https://docs.docker.com/compose/) instalado para facilitar a execução de múltiplos contêineres.
+- Acesso à internet para baixar as imagens do Redis e suas dependências.
+
+## Como Usar
+
+### 1. Clonando o Repositório
+
+Se ainda não clonou o repositório, faça isso com o comando:
+
+```bash
+git clone git@gitlab.brasal.com.br:digital-dev/redis.git
+cd redis
+```
+
+### 2. Configurando o Arquivo `.env`
+
+O arquivo `.env` contém as variáveis de ambiente sensíveis, como as senhas dos usuários `conecta` e `root`. Crie um arquivo `.env` na raiz do projeto e defina as senhas:
+
+```bash
+REDIS_PASSWORD_CONECTA=Conecta@SENHA_AQUI
+REDIS_PASSWORD_ROOT=root@SENHA_AQUI
+```
+
+### 3. Iniciando o Redis com Docker Compose
+
+Com o Docker e o Docker Compose instalados, você pode iniciar o Redis usando o seguinte comando:
+
+```bash
+docker-compose --profile *** up -d #Para utilização em desenvolvimento
+```
+
+Isso fará o seguinte:
+- Criará e iniciará os contêineres Redis de acordo com o arquivo `docker-compose.yml`.
+- Os contêineres serão executados em segundo plano (`-d`), permitindo que você continue usando o terminal para outras tarefas.
+
+### 4. Verificando os Contêineres
+
+Para verificar se os contêineres estão em execução, use o comando:
+
+```bash
+docker ps
+```
+
+Isso mostrará os contêineres Docker ativos.
+
+### 5. Acessando o Redis
+
+Após iniciar os contêineres, você pode acessar o Redis via Redis CLI (Redis Command Line Interface). Para isso, execute:
+
+```bash
+docker exec -it redis_server redis-cli
+```
+
+Isso abrirá o Redis CLI dentro do contêiner.
+
+### 6. Testando a Conexão
+
+Para autenticar no Redis com os usuários configurados, use os seguintes comandos dentro do Redis CLI:
+
+- Para o usuário `conecta`:
+
+```bash
+AUTH conecta Conecta@SENHA_AQUI
+```
+
+- Para o usuário `root`:
+
+```bash
+AUTH root root@SENHA_AQUI
+```
+
+Após a autenticação, você pode realizar comandos Redis como `SET`, `GET`, etc., para testar a funcionalidade.
+
+## Configurações Importantes
+
+### `redis.conf`
+
+O arquivo `redis.conf` contém as configurações de persistência e de ACL (controle de acesso) para os usuários. As principais configurações são:
+
+- **Persistência**: Usamos snapshots periódicos para garantir a recuperação dos dados em caso de falha do sistema.
+- **ACL**: Criamos dois usuários (conecta e root), cada um com permissões específicas. As senhas são configuradas via variáveis de ambiente para garantir a segurança.
+
+As configurações de persistência no `redis.conf` incluem:
+
+```bash
+appendonly no 
+save 900 100 
+save 300 500 
+save 60 2000 
+stop-writes-on-bgsave-error 
+yes
+```
+
+Essas configurações garantem que o Redis fará snapshots a cada intervalo de tempo, dependendo das modificações feitas nas chaves, garantindo a persistência dos dados.
+
+## Parâmetros de Execução
+
+### **Subir Redis para Ambiente de Desenvolvimento**
+
+Para subir o Redis no ambiente de desenvolvimento, use:
+
+```bash
+docker-compose --profile dev up -d
+```
+
+### **Subir Redis para Ambiente de Homologação**
+
+Para subir o Redis no ambiente de homologação, use:
+
+```bash
+docker-compose --profile main up -d
+```
+
+### **Subir Redis para Ambiente de Produção**
+
+Para subir o Redis em um ambiente de produção, modifique o perfil para `prod`:
+
+```bash
+docker-compose --profile prod up -d
+```
+
+### **Reiniciar Redis**
+
+Se você fez alterações no arquivo `redis.conf` ou no arquivo `.env`, reinicie os contêineres Redis para aplicar as mudanças:
+
+```bash
+docker-compose down redis_dev && docker-compose --profile dev up -d #Para ambiente de desenvolvimento
+docker-compose down redis_hml && docker-compose --profile hml up -d #Para ambiente de homologação
+docker-compose down redis_main && docker-compose --profile main up -d #Para ambiente de produção
+```
+
+### **Parar Redis**
+
+Para parar todos os contêineres Redis, use:
+
+```bash
+docker-compose down redis_dev redis_hml redis_main
+```
+
+---
+
+## Considerações de Segurança
+
+- **Senhas**: Certifique-se de definir senhas seguras para os usuários Redis e armazená-las em um arquivo `.env` não versionado.
+- **Acesso Remoto**: Se você precisar acessar o Redis de fora do contêiner, **não exponha a porta 6379 diretamente** na internet sem as devidas medidas de segurança, como firewalls e VPNs.
+- **Autenticação**: O Redis requer autenticação para todos os comandos, usando os usuários configurados no `redis.conf`.
+
+## Contribuição
+
+Sinta-se à vontade para contribuir para este projeto! Se você encontrar algum erro ou tiver sugestões de melhorias, crie uma *issue* ou envie um *pull request*.
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a [MIT License](LICENSE).

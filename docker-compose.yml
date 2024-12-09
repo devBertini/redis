@@ -1,0 +1,54 @@
+services:
+  redis_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis_dev.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD_CONECTA=${REDIS_PASSWORD_CONECTA}
+      - REDIS_PASSWORD_ROOT=${REDIS_PASSWORD_ROOT}
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    profiles:
+      - dev
+
+  redis_hml:
+    build:
+      context: .
+      dockerfile: Dockerfile.hml
+    container_name: redis_hml
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis_hml.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD_CONECTA=${REDIS_PASSWORD_CONECTA}
+      - REDIS_PASSWORD_ROOT=${REDIS_PASSWORD_ROOT}
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    profiles:
+      - hml
+
+  redis_main:
+    build:
+      context: .
+      dockerfile: Dockerfile.main
+    container_name: redis_main
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis_main.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD_CONECTA=${REDIS_PASSWORD_CONECTA}
+      - REDIS_PASSWORD_ROOT=${REDIS_PASSWORD_ROOT}
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    profiles:
+      - prod
+
+volumes:
+  redis_data:
